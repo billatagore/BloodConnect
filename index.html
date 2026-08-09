@@ -1,0 +1,1476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Blood Connect — Blood Management System</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet"/>
+  <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet"/>
+  <link href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@700;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet"/>
+
+  <style>
+    :root{
+      --red:#C8102E;--red-dark:#8B0A1E;--red-deeper:#5C0312;
+      --red-pale:#FFF2F4;--red-mist:#FCE4E8;
+      --red-border:rgba(200,16,46,.18);--red-glow:rgba(200,16,46,.12);
+      --ink:#0F0609;--ink-2:#3D1A21;--ink-3:#7A4D56;--ink-4:#B08890;
+      --white:#FFFFFF;--off-white:#FDF9FA;--surface:#F8F0F2;
+      --green:#0A7B4B;--green-bg:#ECFAF3;
+      --amber:#B45309;--amber-bg:#FFFBEB;
+      --blue:#1D4ED8;--blue-bg:#EFF6FF;
+      --r-xs:6px;--r-sm:10px;--r-md:16px;--r-lg:24px;--r-pill:100px;
+      --sh-sm:0 1px 4px rgba(200,16,46,.06),0 2px 8px rgba(0,0,0,.04);
+      --sh-md:0 4px 16px rgba(200,16,46,.10),0 2px 8px rgba(0,0,0,.06);
+      --sh-lg:0 12px 40px rgba(200,16,46,.14),0 4px 16px rgba(0,0,0,.08);
+      --fd:'Fraunces',Georgia,serif;--fb:'DM Sans',system-ui,sans-serif;
+      --tr:all .22s cubic-bezier(.4,0,.2,1);
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    html{scroll-behavior:smooth}
+    body{font-family:var(--fb);background:var(--off-white);color:var(--ink);min-height:100vh;overflow-x:hidden}
+    ::-webkit-scrollbar{width:5px}
+    ::-webkit-scrollbar-track{background:var(--surface)}
+    ::-webkit-scrollbar-thumb{background:var(--red-mist);border-radius:10px}
+
+    /* ── NAVBAR ── */
+    #mainNav{background:var(--white);border-bottom:1px solid var(--red-border);box-shadow:var(--sh-sm);position:sticky;top:0;z-index:1000}
+    .nav-brand{display:flex;align-items:center;gap:10px;text-decoration:none}
+    .nav-brand-icon{width:36px;height:36px;background:var(--red);border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:17px;box-shadow:0 2px 8px rgba(200,16,46,.35)}
+    .nav-brand-text{font-family:var(--fd);font-size:1.25rem;font-weight:900;color:var(--red);letter-spacing:-.01em}
+    .nav-link-item{font-size:.85rem;font-weight:500;color:var(--ink-3);padding:.45rem .85rem;border-radius:var(--r-sm);cursor:pointer;transition:var(--tr);border:none;background:none;text-decoration:none;display:inline-flex;align-items:center;gap:5px}
+    .nav-link-item:hover,.nav-link-item.active{color:var(--red);background:var(--red-pale)}
+    .ws-chip{display:inline-flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--red-border);border-radius:var(--r-pill);padding:4px 12px;font-size:.75rem;font-weight:600}
+    .ws-dot{width:7px;height:7px;border-radius:50%;background:#ccc}
+    .ws-dot.live{background:#22C55E;animation:breathe 1.8s infinite}
+    .ws-dot.dead{background:#EF4444}
+    @keyframes breathe{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.8)}}
+    .bell-btn{position:relative;width:38px;height:38px;border-radius:var(--r-sm);background:var(--red-pale);border:1px solid var(--red-border);color:var(--red);font-size:16px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:var(--tr)}
+    .bell-btn:hover{background:var(--red-mist)}
+    .bell-badge{position:absolute;top:-5px;right:-5px;min-width:18px;height:18px;background:var(--red);color:#fff;font-size:.65rem;font-weight:700;border-radius:9px;padding:0 4px;display:none;align-items:center;justify-content:center;border:2px solid var(--white)}
+
+    /* Auth pill in navbar */
+    .auth-pill{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--red-border);border-radius:var(--r-pill);padding:4px 14px 4px 8px;font-size:.8rem;cursor:pointer;transition:var(--tr)}
+    .auth-pill:hover{border-color:var(--red);background:var(--red-pale)}
+    .auth-avatar{width:26px;height:26px;border-radius:50%;background:var(--red);color:#fff;font-size:.72rem;font-weight:700;display:flex;align-items:center;justify-content:center}
+    .auth-name{font-weight:600;color:var(--ink-2);max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .auth-role{font-size:.68rem;color:var(--ink-3)}
+
+    /* ── PAGES ── */
+    .page{display:none}
+    .page.active{display:block;animation:fadeUp .3s ease}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+    .page-band{background:var(--white);border-bottom:1px solid var(--red-border);padding:2rem 0 1.5rem}
+    .page-band h1{font-family:var(--fd);font-size:1.9rem;font-weight:900;color:var(--ink);letter-spacing:-.02em}
+    .page-band p{color:var(--ink-3);font-size:.9rem;margin-top:4px}
+
+    /* ── HERO ── */
+    .hero{background:var(--white);border-bottom:1px solid var(--red-border);padding:5rem 0 4rem;position:relative;overflow:hidden}
+    .hero::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 600px 400px at 80% 50%,rgba(200,16,46,.05) 0%,transparent 70%),radial-gradient(ellipse 300px 300px at 10% 80%,rgba(200,16,46,.04) 0%,transparent 70%);pointer-events:none}
+    .hero-label{display:inline-flex;align-items:center;gap:6px;background:var(--red-pale);border:1px solid var(--red-mist);color:var(--red);font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:1.2px;padding:5px 14px;border-radius:var(--r-pill);margin-bottom:1.25rem}
+    .hero-title{font-family:var(--fd);font-size:clamp(2.6rem,5.5vw,4rem);font-weight:900;line-height:1.06;color:var(--ink);letter-spacing:-.03em;margin-bottom:1.25rem}
+    .hero-title em{font-style:normal;color:var(--red)}
+    .hero-sub{font-size:1.05rem;color:var(--ink-3);line-height:1.75;max-width:480px;margin-bottom:2.25rem}
+    .hero-art{display:flex;align-items:center;justify-content:center}
+    .hero-art svg{filter:drop-shadow(0 16px 40px rgba(200,16,46,.2))}
+    .stat-strip{background:var(--white);border-top:1px solid var(--red-border);border-bottom:1px solid var(--red-border);padding:1.5rem 0}
+    .stat-item{text-align:center}
+    .stat-num{font-family:var(--fd);font-size:2rem;font-weight:900;color:var(--red);line-height:1}
+    .stat-lbl{font-size:.78rem;color:var(--ink-3);font-weight:500;margin-top:3px;text-transform:uppercase;letter-spacing:.6px}
+    .features-section{padding:4rem 0;background:var(--surface)}
+    .section-eyebrow{font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--red);margin-bottom:.5rem}
+    .section-title{font-family:var(--fd);font-size:1.9rem;font-weight:900;color:var(--ink);letter-spacing:-.02em}
+    .feat-card{background:var(--white);border:1px solid var(--red-border);border-radius:var(--r-md);padding:1.5rem;height:100%;transition:var(--tr)}
+    .feat-card:hover{transform:translateY(-3px);box-shadow:var(--sh-md)}
+    .feat-icon{width:46px;height:46px;background:var(--red-pale);border-radius:12px;display:flex;align-items:center;justify-content:center;color:var(--red);font-size:1.25rem;margin-bottom:1rem}
+    .feat-card h6{font-weight:700;font-size:.95rem;margin-bottom:.4rem;color:var(--ink)}
+    .feat-card p{font-size:.83rem;color:var(--ink-3);line-height:1.6;margin:0}
+
+    /* ── FORM SHELL ── */
+    .form-shell{background:var(--white);border:1px solid var(--red-border);border-radius:var(--r-lg);box-shadow:var(--sh-sm);overflow:hidden;max-width:700px;margin:0 auto}
+    .form-shell-head{background:var(--red-pale);border-bottom:1px solid var(--red-border);padding:1.1rem 1.6rem;display:flex;align-items:center;gap:10px}
+    .form-shell-head .icon-wrap{width:32px;height:32px;background:var(--red);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:.9rem;flex-shrink:0}
+    .form-shell-head h5{font-weight:700;font-size:1rem;color:var(--red-dark);margin:0}
+    .form-shell-body{padding:1.75rem}
+    .f-label{display:block;font-size:.76rem;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--ink-3);margin-bottom:6px}
+    .f-input,.f-select{width:100%;padding:.6rem 1rem;border:1.5px solid rgba(200,16,46,.2);border-radius:var(--r-sm);font-family:var(--fb);font-size:.9rem;color:var(--ink);background:var(--white);transition:var(--tr);outline:none}
+    .f-input:focus,.f-select:focus{border-color:var(--red);box-shadow:0 0 0 3px rgba(200,16,46,.1)}
+    .f-input.readonly{background:var(--surface);color:var(--ink-3);font-size:.82rem}
+    .f-input::placeholder{color:var(--ink-4)}
+    .f-input.has-icon{padding-left:2.4rem}
+    .f-input-wrap{position:relative}
+    .f-input-wrap .f-icon{position:absolute;left:.85rem;top:50%;transform:translateY(-50%);color:var(--ink-3);font-size:.95rem;pointer-events:none}
+
+    /* ── LOCATION BOX ── */
+    .loc-box{background:var(--red-pale);border:1.5px dashed rgba(200,16,46,.3);border-radius:var(--r-sm);padding:1rem}
+    .loc-status-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:.75rem}
+    .loc-indicator{display:flex;align-items:center;gap:7px;font-size:.82rem;font-weight:500;color:var(--ink-3)}
+    .loc-dot{width:8px;height:8px;border-radius:50%;background:#D1D5DB;flex-shrink:0}
+    .loc-dot.loading{background:#F59E0B;animation:breathe 1s infinite}
+    .loc-dot.ok{background:#22C55E}
+    .loc-dot.err{background:var(--red)}
+
+    /* ── TOGGLE ── */
+    .toggle-row{display:flex;align-items:center;justify-content:space-between;background:var(--surface);border:1px solid var(--red-border);border-radius:var(--r-sm);padding:.75rem 1rem}
+    .toggle-label{font-size:.88rem;font-weight:500;color:var(--ink-2)}
+    .toggle-sub{font-size:.75rem;color:var(--ink-3);margin-top:2px}
+    .toggle-switch{position:relative;width:44px;height:24px;flex-shrink:0}
+    .toggle-switch input{opacity:0;width:0;height:0}
+    .toggle-slider{position:absolute;inset:0;background:#D1D5DB;border-radius:12px;cursor:pointer;transition:var(--tr)}
+    .toggle-slider::before{content:'';position:absolute;width:18px;height:18px;background:#fff;border-radius:50%;top:3px;left:3px;transition:var(--tr);box-shadow:0 1px 3px rgba(0,0,0,.25)}
+    .toggle-switch input:checked+.toggle-slider{background:var(--red)}
+    .toggle-switch input:checked+.toggle-slider::before{transform:translateX(20px)}
+
+    /* ── BUTTONS ── */
+    .btn-red{background:var(--red);color:#fff;border:none;border-radius:var(--r-pill);padding:.7rem 1.8rem;font-family:var(--fb);font-size:.9rem;font-weight:600;cursor:pointer;transition:var(--tr);display:inline-flex;align-items:center;gap:7px;box-shadow:0 4px 16px rgba(200,16,46,.3);text-decoration:none}
+    .btn-red:hover{background:var(--red-dark);color:#fff;transform:translateY(-1px);box-shadow:0 8px 24px rgba(200,16,46,.38)}
+    .btn-red:active{transform:scale(.98)}
+    .btn-red:disabled{opacity:.6;cursor:not-allowed;transform:none}
+    .btn-outline{background:transparent;color:var(--red);border:1.5px solid var(--red-mist);border-radius:var(--r-pill);padding:.65rem 1.6rem;font-family:var(--fb);font-size:.9rem;font-weight:600;cursor:pointer;transition:var(--tr);display:inline-flex;align-items:center;gap:7px;text-decoration:none}
+    .btn-outline:hover{background:var(--red-pale);border-color:var(--red);color:var(--red)}
+    .btn-ghost{background:var(--surface);color:var(--ink-2);border:1px solid var(--red-border);border-radius:var(--r-sm);padding:.45rem .9rem;font-size:.8rem;font-weight:600;cursor:pointer;transition:var(--tr);display:inline-flex;align-items:center;gap:5px}
+    .btn-ghost:hover{background:var(--red-pale);color:var(--red);border-color:var(--red)}
+    .btn-green{background:var(--green);color:#fff;border:none;border-radius:var(--r-sm);padding:.45rem .9rem;font-size:.78rem;font-weight:700;cursor:pointer;transition:var(--tr);display:inline-flex;align-items:center;gap:4px}
+    .btn-green:hover{background:#065F46;color:#fff}
+    .btn-blue{background:var(--blue);color:#fff;border:none;border-radius:var(--r-sm);padding:.45rem .9rem;font-size:.78rem;font-weight:700;cursor:pointer;transition:var(--tr);display:inline-flex;align-items:center;gap:4px}
+    .btn-blue:hover{background:#1e3a8a;color:#fff}
+    .btn-full{width:100%;justify-content:center;border-radius:var(--r-sm)}
+    .spin{width:16px;height:16px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;display:inline-block}
+    @keyframes spin{to{transform:rotate(360deg)}}
+
+    /* ── DASHBOARD ── */
+    .dash-grid{display:grid;grid-template-columns:380px 1fr;gap:1.5rem;align-items:start}
+    @media(max-width:900px){.dash-grid{grid-template-columns:1fr}}
+    .panel{background:var(--white);border:1px solid var(--red-border);border-radius:var(--r-md);overflow:hidden}
+    .panel-head{background:var(--red-pale);border-bottom:1px solid var(--red-border);padding:.9rem 1.25rem;display:flex;align-items:center;justify-content:space-between;gap:10px}
+    .panel-head-left{display:flex;align-items:center;gap:8px}
+    .panel-head-icon{width:28px;height:28px;background:var(--red);border-radius:7px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:.82rem}
+    .panel-head h5{font-weight:700;font-size:.92rem;color:var(--red-dark);margin:0}
+    .panel-body{padding:1.25rem}
+    .panel-body-np{padding:0}
+
+    /* ── DONOR TABLE ── */
+    .donors-tbl{width:100%;border-collapse:collapse;font-size:.83rem}
+    .donors-tbl th{background:var(--red-pale);color:var(--red-dark);font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:.65rem 1rem;border-bottom:1px solid var(--red-border);white-space:nowrap}
+    .donors-tbl td{padding:.65rem 1rem;border-bottom:1px solid rgba(200,16,46,.07);color:var(--ink);vertical-align:middle}
+    .donors-tbl tr:last-child td{border-bottom:none}
+    .donors-tbl tr:hover td{background:var(--red-pale)}
+    .blood-pill{display:inline-flex;align-items:center;justify-content:center;background:var(--red);color:#fff;font-size:.68rem;font-weight:800;padding:3px 8px;border-radius:6px;min-width:36px}
+    .donor-avatar{width:30px;height:30px;background:var(--red-mist);color:var(--red-dark);border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:700;margin-right:7px}
+    .action-call{background:var(--green-bg);color:var(--green);border:1px solid rgba(10,123,75,.2);border-radius:var(--r-xs);padding:3px 10px;font-size:.75rem;font-weight:700;cursor:pointer;transition:var(--tr);text-decoration:none;display:inline-flex;align-items:center;gap:4px}
+    .action-call:hover{background:var(--green);color:#fff}
+    .dist-badge{display:inline-flex;align-items:center;gap:4px;background:var(--surface);border:1px solid var(--red-border);border-radius:var(--r-xs);padding:2px 7px;font-size:.75rem;font-weight:600;color:var(--red-dark);white-space:nowrap}
+    .result-bar{display:flex;align-items:center;justify-content:space-between;padding:.75rem 1.25rem;background:var(--surface);border-bottom:1px solid var(--red-border);font-size:.82rem}
+    .result-bar .count{font-weight:700;color:var(--ink)}
+    .radius-tag{display:inline-flex;align-items:center;gap:5px;font-size:.74rem;font-weight:600;padding:3px 9px;border-radius:var(--r-pill)}
+    .radius-tag.expanded{background:var(--amber-bg);color:var(--amber);border:1px solid rgba(180,83,9,.2)}
+    .radius-tag.normal{background:var(--green-bg);color:var(--green);border:1px solid rgba(10,123,75,.2)}
+
+    /* ── MAP ── */
+    #donorMap{height:380px;border-radius:var(--r-md);border:1px solid var(--red-border);z-index:1}
+    .map-wrap{padding:1rem}
+
+    /* ── NOTIFICATION DRAWER ── */
+    #notifDrawer{position:fixed;top:65px;right:1rem;width:360px;max-height:75vh;overflow-y:auto;z-index:9999;display:none}
+    #notifDrawer.open{display:block}
+    .notif-header{background:var(--white);border:1px solid var(--red-border);border-radius:var(--r-md) var(--r-md) 0 0;padding:.75rem 1rem;display:flex;align-items:center;justify-content:space-between;font-size:.88rem;font-weight:700;color:var(--ink);border-bottom:none}
+    .notif-card{background:var(--white);border:1px solid var(--red-border);border-left:4px solid var(--red);padding:1rem;animation:notifSlide .25s ease}
+    .notif-card:last-child{border-radius:0 0 var(--r-md) var(--r-md)}
+    .notif-card+.notif-card{border-top:none}
+    @keyframes notifSlide{from{transform:translateX(16px);opacity:0}to{transform:none;opacity:1}}
+    .notif-hosp{font-weight:700;color:var(--ink);font-size:.92rem}
+    .notif-meta{color:var(--ink-3);font-size:.78rem;margin:4px 0 10px;line-height:1.5}
+    .notif-blood{display:inline-flex;align-items:center;gap:6px;background:var(--red);color:#fff;font-size:.78rem;font-weight:700;padding:4px 11px;border-radius:var(--r-pill);margin-bottom:10px}
+    .notif-btns{display:flex;gap:7px}
+    .n-accept{flex:1;background:var(--green);color:#fff;border:none;border-radius:var(--r-xs);padding:6px;font-size:.8rem;font-weight:700;cursor:pointer;transition:var(--tr);display:flex;align-items:center;justify-content:center;gap:4px}
+    .n-accept:hover{background:#065F46}
+    .n-reject{flex:1;background:var(--surface);color:var(--ink-3);border:1px solid var(--red-border);border-radius:var(--r-xs);padding:6px;font-size:.8rem;font-weight:700;cursor:pointer;transition:var(--tr);display:flex;align-items:center;justify-content:center;gap:4px}
+    .n-reject:hover{background:var(--red-pale);color:var(--red)}
+
+    /* ── HIST TABLE ── */
+    .hist-tbl{width:100%;border-collapse:collapse;font-size:.82rem}
+    .hist-tbl th{background:var(--surface);color:var(--ink-3);font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.4px;padding:.5rem 1rem;border-bottom:1px solid var(--red-border)}
+    .hist-tbl td{padding:.55rem 1rem;border-bottom:1px solid rgba(200,16,46,.06);color:var(--ink)}
+    .hist-tbl tr:last-child td{border:none}
+    .empty{text-align:center;padding:3rem 1.5rem;color:var(--ink-4)}
+    .empty i{font-size:2.2rem;color:var(--red-mist);display:block;margin-bottom:.75rem}
+    .empty p{font-size:.85rem;margin:0}
+
+    /* ── AUTH MODAL ── */
+    .modal-backdrop-custom{position:fixed;inset:0;background:rgba(15,6,9,.55);backdrop-filter:blur(4px);z-index:9990;display:none;align-items:center;justify-content:center}
+    .modal-backdrop-custom.open{display:flex}
+    .modal-box{background:var(--white);border-radius:var(--r-lg);border:1px solid var(--red-border);box-shadow:var(--sh-lg);width:460px;max-width:calc(100vw - 2rem);overflow:hidden;animation:modalPop .25s ease}
+    @keyframes modalPop{from{transform:scale(.92);opacity:0}to{transform:none;opacity:1}}
+    .modal-head{background:var(--red-pale);border-bottom:1px solid var(--red-border);padding:1.1rem 1.5rem;display:flex;align-items:center;justify-content:space-between}
+    .modal-head h5{font-family:var(--fd);font-size:1.1rem;font-weight:900;color:var(--red-dark);margin:0}
+    .modal-close{background:none;border:none;color:var(--ink-3);font-size:1.2rem;cursor:pointer;transition:var(--tr);padding:2px 6px;border-radius:6px}
+    .modal-close:hover{color:var(--red);background:var(--red-mist)}
+    .modal-body{padding:1.5rem}
+    .modal-tabs{display:flex;background:var(--surface);border-radius:var(--r-sm);padding:3px;gap:3px;margin-bottom:1.25rem}
+    .modal-tab{flex:1;padding:.5rem;font-size:.83rem;font-weight:600;border:none;background:transparent;border-radius:8px;cursor:pointer;color:var(--ink-3);transition:var(--tr)}
+    .modal-tab.active{background:var(--white);color:var(--red);box-shadow:var(--sh-sm)}
+    .role-tabs{display:flex;gap:8px;margin-bottom:1.25rem}
+    .role-tab{flex:1;padding:.6rem;border:1.5px solid var(--red-border);border-radius:var(--r-sm);font-size:.82rem;font-weight:600;cursor:pointer;transition:var(--tr);display:flex;align-items:center;justify-content:center;gap:6px;background:var(--white);color:var(--ink-3)}
+    .role-tab.active{border-color:var(--red);background:var(--red-pale);color:var(--red)}
+
+    /* ── SMS BADGE ── */
+    .sms-sent{display:inline-flex;align-items:center;gap:4px;background:var(--blue-bg);color:var(--blue);border:1px solid rgba(29,78,216,.2);border-radius:var(--r-xs);padding:2px 8px;font-size:.72rem;font-weight:700}
+
+    /* ── PROFILE PAGE ── */
+    .profile-card{background:var(--white);border:1px solid var(--red-border);border-radius:var(--r-lg);padding:2rem;text-align:center;box-shadow:var(--sh-sm)}
+    .profile-avatar{width:80px;height:80px;border-radius:50%;background:var(--red);color:#fff;font-family:var(--fd);font-size:1.8rem;font-weight:900;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;box-shadow:0 4px 16px rgba(200,16,46,.3)}
+    .profile-name{font-family:var(--fd);font-size:1.4rem;font-weight:900;color:var(--ink)}
+    .profile-role{display:inline-flex;align-items:center;gap:5px;background:var(--red-pale);border:1px solid var(--red-mist);color:var(--red);font-size:.78rem;font-weight:700;padding:3px 12px;border-radius:var(--r-pill);margin:.5rem 0 1rem}
+    .profile-info{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;text-align:left;margin-top:1.5rem}
+    .pi-item{background:var(--surface);border-radius:var(--r-sm);padding:.75rem}
+    .pi-label{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--ink-3)}
+    .pi-value{font-size:.9rem;font-weight:600;color:var(--ink);margin-top:3px}
+
+    @media(max-width:576px){
+      .hero{padding:3rem 0 2.5rem}
+      .hero-title{font-size:2.2rem}
+      #notifDrawer{width:calc(100vw - 2rem)}
+      .profile-info{grid-template-columns:1fr}
+    }
+  </style>
+</head>
+<body>
+
+<!-- ════════ AUTH MODAL ════════ -->
+<div class="modal-backdrop-custom" id="authModal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h5 id="modalTitle">Sign In to Blood Connect</h5>
+      <button class="modal-close" onclick="closeAuthModal()"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-tabs">
+        <button class="modal-tab active" id="tabLogin"    onclick="switchAuthTab('login')">Sign In</button>
+        <button class="modal-tab"        id="tabRegister" onclick="switchAuthTab('register')">Create Account</button>
+      </div>
+      <div class="role-tabs" id="roleTabsWrap">
+        <button class="role-tab active" id="roleDonor"    onclick="switchRole('donor')">
+          <i class="bi bi-person-heart"></i> I'm a Donor
+        </button>
+        <button class="role-tab"        id="roleHospital" onclick="switchRole('hospital')">
+          <i class="bi bi-hospital"></i> I'm a Hospital
+        </button>
+      </div>
+
+      <!-- LOGIN FORM -->
+      <div id="loginForm">
+        <div class="mb-3" id="loginPhoneWrap">
+          <label class="f-label" id="loginPhoneLabel">Phone Number</label>
+          <div class="f-input-wrap">
+            <i class="bi bi-telephone f-icon"></i>
+            <input class="f-input has-icon" type="tel" id="loginPhone" placeholder="+91 98765 43210"/>
+          </div>
+        </div>
+        <div class="mb-3">
+          <label class="f-label">Password</label>
+          <div class="f-input-wrap">
+            <i class="bi bi-lock f-icon"></i>
+            <input class="f-input has-icon" type="password" id="loginPass" placeholder="Enter your password"/>
+          </div>
+        </div>
+        <button class="btn-red btn-full" id="loginBtn" onclick="doLogin()">
+          <i class="bi bi-box-arrow-in-right"></i> Sign In
+        </button>
+      </div>
+
+      <!-- REGISTER FORM — Donor -->
+      <div id="regDonorForm" style="display:none">
+        <div class="row g-2 mb-2">
+          <div class="col-7">
+            <label class="f-label">Full Name *</label>
+            <input class="f-input" type="text" id="rdName" placeholder="Priya Sharma"/>
+          </div>
+          <div class="col-5">
+            <label class="f-label">Blood Group *</label>
+            <select class="f-select" id="rdBlood">
+              <option value="">Select</option>
+              <option>A+</option><option>A-</option><option>B+</option><option>B-</option>
+              <option>AB+</option><option>AB-</option><option>O+</option><option>O-</option>
+            </select>
+          </div>
+        </div>
+        <div class="row g-2 mb-2">
+          <div class="col-6">
+            <label class="f-label">Phone *</label>
+            <input class="f-input" type="tel" id="rdPhone" placeholder="+91 …"/>
+          </div>
+          <div class="col-6">
+            <label class="f-label">City *</label>
+            <input class="f-input" type="text" id="rdCity" placeholder="Hyderabad"/>
+          </div>
+        </div>
+        <div class="mb-2">
+          <label class="f-label">Address *</label>
+          <input class="f-input" type="text" id="rdAddress" placeholder="Street, Area"/>
+        </div>
+        <div class="row g-2 mb-2">
+          <div class="col-6">
+            <label class="f-label">Password *</label>
+            <input class="f-input" type="password" id="rdPass" placeholder="Min 6 chars"/>
+          </div>
+          <div class="col-6">
+            <label class="f-label">Confirm Password *</label>
+            <input class="f-input" type="password" id="rdPass2" placeholder="Repeat"/>
+          </div>
+        </div>
+        <div class="mb-3">
+          <div class="loc-box" style="padding:.75rem">
+            <div class="loc-status-row" style="margin-bottom:0">
+              <div class="loc-indicator"><div class="loc-dot" id="mLocDot"></div><span id="mLocTxt">Optional: capture location</span></div>
+              <button type="button" class="btn-ghost" onclick="captureLocation('m')" style="font-size:.72rem;padding:3px 8px"><i class="bi bi-crosshair2"></i> Use GPS</button>
+            </div>
+          </div>
+        </div>
+        <button class="btn-red btn-full" id="regDonorBtn" onclick="doRegisterDonor()">
+          <i class="bi bi-person-plus"></i> Create Donor Account
+        </button>
+      </div>
+
+      <!-- REGISTER FORM — Hospital -->
+      <div id="regHospForm" style="display:none">
+        <div class="mb-2">
+          <label class="f-label">Hospital Name *</label>
+          <input class="f-input" type="text" id="rhName" placeholder="Apollo Hospitals"/>
+        </div>
+        <div class="row g-2 mb-2">
+          <div class="col-6">
+            <label class="f-label">City *</label>
+            <input class="f-input" type="text" id="rhCity" placeholder="Hyderabad"/>
+          </div>
+          <div class="col-6">
+            <label class="f-label">Contact Number *</label>
+            <input class="f-input" type="tel" id="rhPhone" placeholder="+91 40 …"/>
+          </div>
+        </div>
+        <div class="mb-2">
+          <label class="f-label">Address *</label>
+          <input class="f-input" type="text" id="rhAddress" placeholder="Road, District"/>
+        </div>
+        <div class="row g-2 mb-2">
+          <div class="col-6">
+            <label class="f-label">Password *</label>
+            <input class="f-input" type="password" id="rhPass" placeholder="Min 6 chars"/>
+          </div>
+          <div class="col-6">
+            <label class="f-label">Confirm Password *</label>
+            <input class="f-input" type="password" id="rhPass2" placeholder="Repeat"/>
+          </div>
+        </div>
+        <div class="mb-3">
+          <div class="loc-box" style="padding:.75rem">
+            <div class="loc-status-row" style="margin-bottom:0">
+              <div class="loc-indicator"><div class="loc-dot" id="mhLocDot"></div><span id="mhLocTxt">Optional: capture hospital location</span></div>
+              <button type="button" class="btn-ghost" onclick="captureLocation('mh')" style="font-size:.72rem;padding:3px 8px"><i class="bi bi-crosshair2"></i> Use GPS</button>
+            </div>
+          </div>
+        </div>
+        <button class="btn-red btn-full" id="regHospBtn" onclick="doRegisterHospital()">
+          <i class="bi bi-building-add"></i> Create Hospital Account
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════ NAVBAR ════════ -->
+<nav id="mainNav">
+  <div class="container d-flex align-items-center justify-content-between py-2 gap-2 flex-wrap">
+    <a class="nav-brand" href="#" onclick="nav('home')">
+      <div class="nav-brand-icon"><i class="bi bi-droplet-fill"></i></div>
+      <span class="nav-brand-text">Blood Connect</span>
+    </a>
+    <div class="d-none d-md-flex align-items-center gap-1 flex-grow-1 ms-3">
+      <button class="nav-link-item active" id="nl-home"    onclick="nav('home')"><i class="bi bi-house"></i> Home</button>
+      <button class="nav-link-item" id="nl-request" onclick="guardNav('request')"><i class="bi bi-droplet"></i> Request Blood</button>
+      <button class="nav-link-item" id="nl-map"     onclick="nav('map')"><i class="bi bi-map"></i> Donor Map</button>
+      <button class="nav-link-item" id="nl-profile" onclick="guardNav('profile')" style="display:none"><i class="bi bi-person-circle"></i> My Profile</button>
+    </div>
+    <div class="d-flex align-items-center gap-2 ms-auto ms-md-0">
+      <div class="ws-chip d-none d-sm-inline-flex">
+        <div class="ws-dot" id="wsDot"></div>
+        <span id="wsLabel" style="color:var(--ink-3)">Connecting…</span>
+      </div>
+      <button class="bell-btn" onclick="toggleDrawer()"><i class="bi bi-bell-fill"></i><span class="bell-badge" id="bellBadge">0</span></button>
+
+      <!-- ★ Guest area: only shown when NOT logged in ★ -->
+      <div id="authAreaGuest" style="display:flex;" class="gap-2">
+        <button class="btn-ghost" onclick="openAuthModal('login')" style="font-size:.8rem;padding:.4rem .9rem"><i class="bi bi-box-arrow-in-right"></i> Sign In</button>
+        <button class="btn-red" onclick="openAuthModal('register')" style="padding:.4rem 1rem;font-size:.8rem"><i class="bi bi-person-plus"></i> Register</button>
+      </div>
+
+      <!-- ★ User area: only shown when logged in ★ -->
+      <div id="authAreaUser" style="display:none;" class="align-items-center gap-2">
+        <div class="auth-pill" onclick="guardNav('profile')">
+          <div class="auth-avatar" id="navAvatar">?</div>
+          <div>
+            <div class="auth-name" id="navName">User</div>
+            <div class="auth-role" id="navRole">—</div>
+          </div>
+        </div>
+        <button class="btn-ghost" onclick="doLogout()" style="font-size:.8rem;padding:.4rem .9rem;color:var(--red);border-color:rgba(200,16,46,.3)"><i class="bi bi-box-arrow-right"></i> Sign Out</button>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- ════════ NOTIFICATION DRAWER ════════ -->
+<div id="notifDrawer">
+  <div class="notif-header">
+    <span><i class="bi bi-bell-fill me-2" style="color:var(--red)"></i>Live Alerts</span>
+    <button class="btn-ghost" onclick="clearNotifs()" style="font-size:.72rem;padding:3px 8px">Clear</button>
+  </div>
+  <div id="notifList"></div>
+</div>
+
+<!-- ════════ HOME PAGE ════════ -->
+<div id="page-home" class="page active">
+  <section class="hero">
+    <div class="container">
+      <div class="row align-items-center">
+        <div class="col-lg-6 col-md-7">
+          <div class="hero-label"><i class="bi bi-wifi"></i> Real-time Donor Network</div>
+          <h1 class="hero-title">Give Blood,<br><em>Give Life.</em></h1>
+          <p class="hero-sub">Blood Connect connects hospitals with compatible donors in seconds — powered by live location, smart matching, real-time alerts, and direct SMS to donors.</p>
+          <div class="d-flex gap-3 flex-wrap">
+            <button class="btn-red" onclick="openAuthModal('register')"><i class="bi bi-person-heart"></i> Become a Donor</button>
+            <button class="btn-outline" onclick="openAuthModal('register','hospital')"><i class="bi bi-hospital"></i> Register Hospital</button>
+          </div>
+        </div>
+        <div class="col-lg-6 col-md-5 d-none d-md-flex hero-art mt-4 mt-md-0">
+          <svg width="260" height="260" viewBox="0 0 260 260" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="130" cy="130" r="110" fill="#FFF2F4"/>
+            <circle cx="130" cy="130" r="80" fill="#FCE4E8" opacity=".6"/>
+            <polyline points="30,130 60,130 72,105 84,158 96,118 108,130 152,130 164,108 176,152 188,130 230,130" fill="none" stroke="#C8102E" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M130,55 C130,55 95,110 95,140 C95,159.3 111,175 130,175 C149,175 165,159.3 165,140 C165,110 130,55 130,55Z" fill="#C8102E"/>
+            <path d="M118,135 C118,125 122,116 130,108" stroke="rgba(255,255,255,.45)" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </section>
+  <div class="stat-strip">
+    <div class="container">
+      <div class="row g-3 justify-content-center">
+        <div class="col-6 col-md-3 stat-item"><div class="stat-num" id="statDonors">0</div><div class="stat-lbl">Donors Registered</div></div>
+        <div class="col-6 col-md-3 stat-item"><div class="stat-num" id="statHospitals">0</div><div class="stat-lbl">Hospitals Onboard</div></div>
+        <div class="col-6 col-md-3 stat-item"><div class="stat-num" id="statRequests">0</div><div class="stat-lbl">Requests Fulfilled</div></div>
+        <div class="col-6 col-md-3 stat-item"><div class="stat-num" id="statLive">0</div><div class="stat-lbl">Live Connections</div></div>
+      </div>
+    </div>
+  </div>
+  <section class="features-section">
+    <div class="container">
+      <div class="text-center mb-4"><div class="section-eyebrow">Core Capabilities</div><h2 class="section-title">Built for Critical Moments</h2></div>
+      <div class="row g-3">
+        <div class="col-md-4"><div class="feat-card"><div class="feat-icon"><i class="bi bi-geo-alt-fill"></i></div><h6>Live Location Matching</h6><p>Haversine formula finds the nearest compatible donors within 2 km, auto-expanding to 5 km.</p></div></div>
+        <div class="col-md-4"><div class="feat-card"><div class="feat-icon"><i class="bi bi-broadcast-pin"></i></div><h6>Real-time WebSocket Alerts</h6><p>Blood requests broadcast instantly to every connected client — no polling, no delay.</p></div></div>
+        <div class="col-md-4"><div class="feat-card"><div class="feat-icon"><i class="bi bi-chat-dots-fill"></i></div><h6>Direct SMS to Donors</h6><p>Hospitals can send an urgent SMS appeal directly to matched donors with one click via Twilio.</p></div></div>
+        <div class="col-md-4"><div class="feat-card"><div class="feat-icon"><i class="bi bi-shield-lock-fill"></i></div><h6>Secure Authentication</h6><p>bcrypt-hashed passwords and JWT tokens protect both donor and hospital accounts.</p></div></div>
+        <div class="col-md-4"><div class="feat-card"><div class="feat-icon"><i class="bi bi-pin-map-fill"></i></div><h6>Interactive Donor Map</h6><p>See all registered donors plotted on a live Leaflet map with blood group markers.</p></div></div>
+        <div class="col-md-4"><div class="feat-card"><div class="feat-icon"><i class="bi bi-database-fill"></i></div><h6>SQLite Persistence</h6><p>Donors and hospitals are stored in SQLite — data survives server restarts.</p></div></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ════════ REQUEST BLOOD PAGE ════════ -->
+<div id="page-request" class="page">
+  <div class="page-band">
+    <div class="container">
+      <h1><i class="bi bi-droplet-fill me-2" style="color:var(--red)"></i>Blood Request Dashboard</h1>
+      <p id="reqPageSub">Submit an urgent blood request and view matched donors instantly</p>
+    </div>
+  </div>
+  <div class="container py-4 pb-5">
+    <div class="dash-grid">
+      <div>
+        <div class="panel mb-3">
+          <div class="panel-head"><div class="panel-head-left"><div class="panel-head-icon"><i class="bi bi-send-fill"></i></div><h5>New Blood Request</h5></div></div>
+          <div class="panel-body">
+            <div class="mb-3">
+              <label class="f-label">Hospital ID</label>
+              <input class="f-input readonly" type="text" id="rHospId" placeholder="Auto-filled from your account" readonly/>
+            </div>
+            <div class="mb-3">
+              <label class="f-label">Required Blood Group *</label>
+              <select class="f-select" id="rBlood">
+                <option value="">Select blood group</option>
+                <option>A+</option><option>A-</option><option>B+</option><option>B-</option>
+                <option>AB+</option><option>AB-</option><option>O+</option><option>O-</option>
+              </select>
+            </div>
+            <div class="mb-3">
+              <label class="f-label">Target Location *</label>
+              <input class="f-input" type="text" id="rLocation" placeholder="e.g. Banjara Hills, Hyderabad"/>
+            </div>
+            <div class="mb-4">
+              <label class="f-label">Request Coordinates</label>
+              <div class="loc-box">
+                <div class="loc-status-row">
+                  <div class="loc-indicator"><div class="loc-dot" id="rLocDot"></div><span id="rLocTxt">Not captured</span></div>
+                  <button type="button" class="btn-ghost" onclick="captureLocation('r')"><i class="bi bi-crosshair2"></i> Use Location</button>
+                </div>
+                <div class="row g-2">
+                  <div class="col-6"><label class="f-label" style="font-size:.68rem">Latitude</label><input class="f-input readonly" type="text" id="rLat" placeholder="auto-fill" readonly/></div>
+                  <div class="col-6"><label class="f-label" style="font-size:.68rem">Longitude</label><input class="f-input readonly" type="text" id="rLon" placeholder="auto-fill" readonly/></div>
+                </div>
+              </div>
+            </div>
+            <button class="btn-red btn-full" id="rBtn" onclick="submitRequest()">
+              <i class="bi bi-search-heart"></i> Search Matching Donors
+            </button>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><div class="panel-head-left"><div class="panel-head-icon"><i class="bi bi-clock-history"></i></div><h5>Request History</h5></div></div>
+          <div class="panel-body-np" id="historyWrap"><div class="empty"><i class="bi bi-journal-x"></i><p>No requests yet</p></div></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-head" style="flex-wrap:wrap;gap:8px">
+          <div class="panel-head-left"><div class="panel-head-icon"><i class="bi bi-people-fill"></i></div><h5>Matched Donors</h5></div>
+          <div class="d-flex align-items-center gap-2">
+            <span id="matchSummary" style="display:none;font-size:.78rem;color:var(--ink-3)"></span>
+            <button id="smsAllBtn" class="btn-blue" style="display:none" onclick="sendSmsAll()"><i class="bi bi-chat-dots-fill"></i> SMS All</button>
+          </div>
+        </div>
+        <div id="donorResultsWrap"><div class="empty"><i class="bi bi-person-badge"></i><p>Submit a request to find compatible donors</p></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════ MAP PAGE ════════ -->
+<div id="page-map" class="page">
+  <div class="page-band">
+    <div class="container">
+      <h1><i class="bi bi-map me-2" style="color:var(--red)"></i>Donor Location Map</h1>
+      <p>Live map of all registered donors with their blood groups</p>
+    </div>
+  </div>
+  <div class="container py-4 pb-5">
+    <div class="row g-4">
+      <div class="col-lg-8">
+        <div class="panel">
+          <div class="panel-head"><div class="panel-head-left"><div class="panel-head-icon"><i class="bi bi-geo-fill"></i></div><h5>Donor Locations</h5></div>
+          <button class="btn-ghost" onclick="refreshMap()"><i class="bi bi-arrow-clockwise"></i> Refresh</button></div>
+          <div class="map-wrap"><div id="donorMap"></div></div>
+        </div>
+      </div>
+      <div class="col-lg-4">
+        <div class="panel">
+          <div class="panel-head"><div class="panel-head-left"><div class="panel-head-icon"><i class="bi bi-list-ul"></i></div><h5>All Donors</h5></div></div>
+          <div class="panel-body-np" id="mapDonorList"><div class="empty"><i class="bi bi-people"></i><p>Loading…</p></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════ PROFILE PAGE ════════ -->
+<div id="page-profile" class="page">
+  <div class="page-band">
+    <div class="container">
+      <h1><i class="bi bi-person-circle me-2" style="color:var(--red)"></i>My Profile</h1>
+      <p>Manage your account and settings</p>
+    </div>
+  </div>
+  <div class="container py-4 pb-5" style="max-width:700px">
+    <div class="profile-card" id="profileCard">
+      <div class="empty"><i class="bi bi-person-slash"></i><p>Not logged in</p></div>
+    </div>
+    <div id="availSection" style="display:none;margin-top:1.5rem">
+      <div class="panel">
+        <div class="panel-head"><div class="panel-head-left"><div class="panel-head-icon"><i class="bi bi-toggle-on"></i></div><h5>Donation Availability</h5></div></div>
+        <div class="panel-body">
+          <div class="toggle-row">
+            <div><div class="toggle-label">Available to Donate</div><div class="toggle-sub">Toggle off when you're temporarily unavailable</div></div>
+            <label class="toggle-switch"><input type="checkbox" id="profileAvailToggle" onchange="updateAvailability(this.checked)"/><span class="toggle-slider"></span></label>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:1.5rem;text-align:center">
+      <button class="btn-outline" onclick="doLogout()"><i class="bi bi-box-arrow-right"></i> Sign Out</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js"></script>
+
+<script>
+/* ══════════════════════════════════════════════════════════
+   CONFIG
+══════════════════════════════════════════════════════════ */
+const API = 'http://localhost:8000';
+const WS  = 'ws://localhost:8000/ws';
+
+/* ══════════════════════════════════════════════════════════
+   STATE
+══════════════════════════════════════════════════════════ */
+let ws = null;
+const gps     = { r: null, m: null, mh: null };
+const notifs  = [];
+let unread    = 0;
+const reqHistory = [];
+let mapInstance  = null;
+let mapMarkers   = [];
+
+// Auth state — read from localStorage immediately on script load
+let authToken = localStorage.getItem('ls_token') || null;
+let authUser  = JSON.parse(localStorage.getItem('ls_user') || 'null');
+let authRole  = localStorage.getItem('ls_role') || null;
+
+// Modal state
+let modalMode = 'login';
+let modalRole = 'donor';
+
+// Last blood request result (for SMS-all)
+let lastRequestResult = null;
+
+/* ══════════════════════════════════════════════════════════
+   NAVIGATION
+══════════════════════════════════════════════════════════ */
+function nav(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-link-item').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  const btn = document.getElementById('nl-' + page);
+  if (btn) btn.classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  document.getElementById('notifDrawer').classList.remove('open');
+  if (page === 'home')    loadStats();
+  if (page === 'map')     initMap();
+  if (page === 'profile') renderProfile();
+  if (page === 'request' && authRole === 'hospital') loadHospitalHistory();
+}
+
+function guardNav(page) {
+  if (!authToken) {
+    openAuthModal('login');
+    Swal.fire({ toast:true, position:'top-end', icon:'info', title:'Please sign in first', timer:2500, showConfirmButton:false });
+    return;
+  }
+  if (page === 'request' && authRole !== 'hospital') {
+    Swal.fire({ icon:'info', title:'Hospitals Only', text:'Blood requests can only be submitted by registered hospitals.', confirmButtonColor:'#C8102E' });
+    return;
+  }
+  nav(page);
+}
+
+/* ══════════════════════════════════════════════════════════
+   AUTH MODAL
+══════════════════════════════════════════════════════════ */
+function openAuthModal(mode, role) {
+  modalMode = mode || 'login';
+  modalRole = role || 'donor';
+  switchAuthTab(modalMode);
+  switchRole(modalRole);
+  document.getElementById('authModal').classList.add('open');
+}
+function closeAuthModal() {
+  document.getElementById('authModal').classList.remove('open');
+}
+function switchAuthTab(tab) {
+  modalMode = tab;
+  document.getElementById('tabLogin').classList.toggle('active', tab === 'login');
+  document.getElementById('tabRegister').classList.toggle('active', tab === 'register');
+  document.getElementById('loginForm').style.display     = tab === 'login'    ? '' : 'none';
+  document.getElementById('regDonorForm').style.display  = tab === 'register' && modalRole === 'donor'    ? '' : 'none';
+  document.getElementById('regHospForm').style.display   = tab === 'register' && modalRole === 'hospital'  ? '' : 'none';
+  document.getElementById('modalTitle').textContent = tab === 'login' ? 'Sign In to Blood Connect' : 'Create Your Account';
+}
+function switchRole(role) {
+  modalRole = role;
+  document.getElementById('roleDonor').classList.toggle('active', role === 'donor');
+  document.getElementById('roleHospital').classList.toggle('active', role === 'hospital');
+  if (modalMode === 'login') {
+    document.getElementById('loginPhoneLabel').textContent = role === 'hospital' ? 'Contact Number' : 'Phone Number';
+  }
+  if (modalMode === 'register') {
+    document.getElementById('regDonorForm').style.display = role === 'donor'    ? '' : 'none';
+    document.getElementById('regHospForm').style.display  = role === 'hospital' ? '' : 'none';
+  }
+}
+document.getElementById('authModal').addEventListener('click', e => {
+  if (e.target === document.getElementById('authModal')) closeAuthModal();
+});
+
+/* ══════════════════════════════════════════════════════════
+   LOGIN
+══════════════════════════════════════════════════════════ */
+async function doLogin() {
+  const phone = document.getElementById('loginPhone').value.trim();
+  const pass  = document.getElementById('loginPass').value;
+  if (!phone || !pass) { errAlert('Please fill in all fields'); return; }
+
+  const btn = document.getElementById('loginBtn');
+  setBtn(btn, true, 'Signing in…');
+  try {
+    const endpoint = modalRole === 'donor' ? '/api/login-donor' : '/api/login-hospital';
+    const body     = modalRole === 'donor'
+      ? { phone_number: phone, password: pass }
+      : { contact_number: phone, password: pass };
+
+    const res  = await fetch(API + endpoint, jsonPost(body));
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Login failed');
+
+    setAuthState(data.token, data, modalRole);
+    closeAuthModal();
+    Swal.fire({ toast:true, position:'top-end', icon:'success',
+      title:`Welcome back, ${data.full_name || data.name}!`, timer:2500, showConfirmButton:false });
+    loadStats();
+    if (modalRole === 'donor') loadDonorRequests();
+    if (modalRole === 'hospital') loadHospitalHistory();
+  } catch(e) { errAlert(e.message); }
+  finally { setBtn(btn, false, '<i class="bi bi-box-arrow-in-right"></i> Sign In'); }
+}
+
+/* ══════════════════════════════════════════════════════════
+   REGISTER DONOR
+══════════════════════════════════════════════════════════ */
+async function doRegisterDonor() {
+  const name  = document.getElementById('rdName').value.trim();
+  const blood = document.getElementById('rdBlood').value;
+  const phone = document.getElementById('rdPhone').value.trim();
+  const city  = document.getElementById('rdCity').value.trim();
+  const addr  = document.getElementById('rdAddress').value.trim();
+  const pass  = document.getElementById('rdPass').value;
+  const pass2 = document.getElementById('rdPass2').value;
+
+  if (!name||!blood||!phone||!city||!addr||!pass) { errAlert('Please fill in all required fields'); return; }
+  if (pass !== pass2) { errAlert('Passwords do not match'); return; }
+  if (pass.length < 6) { errAlert('Password must be at least 6 characters'); return; }
+
+  const btn = document.getElementById('regDonorBtn');
+  setBtn(btn, true, 'Creating account…');
+  try {
+    const payload = {
+      full_name: name, blood_group: blood, phone_number: phone,
+      address: addr, location: city, password: pass,
+      latitude: gps.m?.lat ?? null, longitude: gps.m?.lon ?? null
+    };
+    const res  = await fetch(API + '/api/register-donor', jsonPost(payload));
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Registration failed');
+
+    setAuthState(data.token, { donor_id: data.donor_id, full_name: name, blood_group: blood,
+      location: city, phone_number: phone, latitude: gps.m?.lat, longitude: gps.m?.lon }, 'donor');
+    closeAuthModal();
+    Swal.fire({ icon:'success', title:'Account Created! 🎉',
+      html:`Welcome, <b>${name}</b>!<br>Your Donor ID: <b>#${data.donor_id}</b>`, confirmButtonColor:'#C8102E' });
+    loadStats();
+    loadDonorRequests();
+  } catch(e) { errAlert(e.message); }
+  finally { setBtn(btn, false, '<i class="bi bi-person-plus"></i> Create Donor Account'); }
+}
+
+/* ══════════════════════════════════════════════════════════
+   REGISTER HOSPITAL
+══════════════════════════════════════════════════════════ */
+async function doRegisterHospital() {
+  const name  = document.getElementById('rhName').value.trim();
+  const city  = document.getElementById('rhCity').value.trim();
+  const phone = document.getElementById('rhPhone').value.trim();
+  const addr  = document.getElementById('rhAddress').value.trim();
+  const pass  = document.getElementById('rhPass').value;
+  const pass2 = document.getElementById('rhPass2').value;
+
+  if (!name||!city||!phone||!addr||!pass) { errAlert('Please fill in all required fields'); return; }
+  if (pass !== pass2) { errAlert('Passwords do not match'); return; }
+  if (pass.length < 6) { errAlert('Password must be at least 6 characters'); return; }
+
+  const btn = document.getElementById('regHospBtn');
+  setBtn(btn, true, 'Creating account…');
+  try {
+    const payload = {
+      name, location: city, contact_number: phone, address: addr, password: pass,
+      latitude: gps.mh?.lat ?? null, longitude: gps.mh?.lon ?? null
+    };
+    const res  = await fetch(API + '/api/register-hospital', jsonPost(payload));
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Registration failed');
+
+    setAuthState(data.token, { hospital_id: data.hospital_id, name, location: city,
+      contact_number: phone, latitude: gps.mh?.lat, longitude: gps.mh?.lon }, 'hospital');
+    closeAuthModal();
+    Swal.fire({ icon:'success', title:'Hospital Registered! 🏥',
+      html:`<b>${name}</b> is now on Blood Connect.<br>Hospital ID: <b>#${data.hospital_id}</b><br>
+            <small>Use this ID when requesting blood.</small>`, confirmButtonColor:'#C8102E' });
+    loadStats();
+    loadHospitalHistory();
+  } catch(e) { errAlert(e.message); }
+  finally { setBtn(btn, false, '<i class="bi bi-building-add"></i> Create Hospital Account'); }
+}
+
+/* ══════════════════════════════════════════════════════════
+   AUTH STATE  ★ THE FIX IS IN updateNavAuth BELOW ★
+══════════════════════════════════════════════════════════ */
+function setAuthState(token, user, role) {
+  authToken = token;
+  authUser  = user;
+  authRole  = role;
+  localStorage.setItem('ls_token', token);
+  localStorage.setItem('ls_user',  JSON.stringify(user));
+  localStorage.setItem('ls_role',  role);
+  resetSessionState();
+  updateNavAuth();
+  if (role === 'hospital') {
+    document.getElementById('rHospId').value = user.hospital_id || '';
+  }
+}
+
+function resetSessionState() {
+  // Wipe anything scoped to the previous account so switching accounts in
+  // the same tab never leaks one user's notifications/history into another's.
+  notifs.length = 0;
+  unread = 0;
+  reqHistory.length = 0;
+  lastRequestResult = null;
+  const badge = document.getElementById('bellBadge');
+  if (badge) badge.style.display = 'none';
+  renderNotifs();
+  renderHistory();
+}
+
+function updateNavAuth() {
+  const guest = document.getElementById('authAreaGuest');
+  const user  = document.getElementById('authAreaUser');
+  const pLink = document.getElementById('nl-profile');
+
+  if (authToken && authUser) {
+    // ── LOGGED IN: hide Sign In/Register, show avatar + Sign Out ──
+    guest.style.display = 'none';
+    user.style.display  = 'flex';
+    pLink.style.display = 'inline-block';
+    const name = authUser.full_name || authUser.name || 'User';
+    document.getElementById('navAvatar').textContent = name[0].toUpperCase();
+    document.getElementById('navName').textContent   = name;
+    document.getElementById('navRole').textContent   = authRole === 'donor' ? '🩸 Donor' : '🏥 Hospital';
+  } else {
+    // ── LOGGED OUT: show Sign In/Register, hide avatar + Sign Out ──
+    // ★ Use explicit 'flex' — NOT '' which just removes inline style
+    //   and lets Bootstrap's d-flex class make both rows visible ★
+    guest.style.display = 'flex';
+    user.style.display  = 'none';
+    pLink.style.display = 'none';
+  }
+}
+
+function doLogout() {
+  Swal.fire({
+    icon:'question', title:'Sign Out?',
+    text:'You will be signed out of Blood Connect.',
+    showCancelButton:true, confirmButtonColor:'#C8102E',
+    confirmButtonText:'Yes, sign out'
+  }).then(r => {
+    if (r.isConfirmed) {
+      authToken = null; authUser = null; authRole = null;
+      localStorage.removeItem('ls_token');
+      localStorage.removeItem('ls_user');
+      localStorage.removeItem('ls_role');
+      resetSessionState();
+      updateNavAuth();
+      nav('home');
+    }
+  });
+}
+
+/* ══════════════════════════════════════════════════════════
+   PROFILE PAGE
+══════════════════════════════════════════════════════════ */
+function renderProfile() {
+  const card  = document.getElementById('profileCard');
+  const avail = document.getElementById('availSection');
+  if (!authUser || !authRole) {
+    card.innerHTML = '<div class="empty"><i class="bi bi-person-slash"></i><p>Not logged in</p></div>';
+    avail.style.display = 'none';
+    return;
+  }
+  const u = authUser;
+  const name = u.full_name || u.name || 'User';
+  if (authRole === 'donor') {
+    card.innerHTML = `
+      <div class="profile-avatar">${name[0].toUpperCase()}</div>
+      <div class="profile-name">${esc(name)}</div>
+      <div class="profile-role"><i class="bi bi-person-heart"></i> Blood Donor</div>
+      <div class="profile-info">
+        <div class="pi-item"><div class="pi-label">Donor ID</div><div class="pi-value">#${u.donor_id||u.id||'—'}</div></div>
+        <div class="pi-item"><div class="pi-label">Blood Group</div><div class="pi-value"><span class="blood-pill">${esc(u.blood_group||'—')}</span></div></div>
+        <div class="pi-item"><div class="pi-label">Phone</div><div class="pi-value">${esc(u.phone_number||'—')}</div></div>
+        <div class="pi-item"><div class="pi-label">Location</div><div class="pi-value">${esc(u.location||'—')}</div></div>
+        <div class="pi-item" style="grid-column:1/-1"><div class="pi-label">GPS Coordinates</div><div class="pi-value">${u.latitude?`${u.latitude}, ${u.longitude}`:'Not captured'}</div></div>
+      </div>`;
+    avail.style.display = '';
+    document.getElementById('profileAvailToggle').checked = u.is_available !== false;
+  } else {
+    card.innerHTML = `
+      <div class="profile-avatar">${name[0].toUpperCase()}</div>
+      <div class="profile-name">${esc(name)}</div>
+      <div class="profile-role"><i class="bi bi-hospital"></i> Hospital</div>
+      <div class="profile-info">
+        <div class="pi-item"><div class="pi-label">Hospital ID</div><div class="pi-value">#${u.hospital_id||u.id||'—'}</div></div>
+        <div class="pi-item"><div class="pi-label">City</div><div class="pi-value">${esc(u.location||'—')}</div></div>
+        <div class="pi-item"><div class="pi-label">Contact</div><div class="pi-value">${esc(u.contact_number||'—')}</div></div>
+        <div class="pi-item"><div class="pi-label">GPS Coordinates</div><div class="pi-value">${u.latitude?`${u.latitude}, ${u.longitude}`:'Not captured'}</div></div>
+      </div>`;
+    avail.style.display = 'none';
+  }
+}
+
+async function updateAvailability(val) {
+  if (!authToken) return;
+  try {
+    const res = await fetch(API + '/api/donor/availability', {
+      method:'PATCH', headers:{'Content-Type':'application/json','Authorization':'Bearer '+authToken},
+      body: JSON.stringify({ is_available: val })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail);
+    if (authUser) { authUser.is_available = val; localStorage.setItem('ls_user', JSON.stringify(authUser)); }
+    Swal.fire({ toast:true, position:'top-end', icon:'success',
+      title: val ? 'You are now available to donate' : 'Availability set to unavailable',
+      timer:2000, showConfirmButton:false });
+  } catch(e) { errAlert(e.message); }
+}
+
+/* ══════════════════════════════════════════════════════════
+   BLOOD REQUEST
+══════════════════════════════════════════════════════════ */
+async function submitRequest() {
+  if (!authToken || authRole !== 'hospital') {
+    openAuthModal('login', 'hospital');
+    return;
+  }
+  const hospId   = authUser?.hospital_id || authUser?.id;
+  const blood    = document.getElementById('rBlood').value;
+  const location = document.getElementById('rLocation').value.trim();
+  if (!blood || !location) { errAlert('Please select a blood group and enter target location'); return; }
+
+  const btn = document.getElementById('rBtn');
+  setBtn(btn, true, 'Searching…');
+  const payload = {
+    hospital_id: parseInt(hospId),
+    blood_group: blood,
+    target_location: location,
+    latitude:  gps.r?.lat ?? null,
+    longitude: gps.r?.lon ?? null,
+  };
+  try {
+    const res  = await fetch(API + '/api/request-blood', {
+      method:'POST', headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer '+authToken },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Request failed');
+
+    lastRequestResult = { ...data, payload };
+    renderDonorResults(data);
+    reqHistory.unshift({ id:data.request_id, blood, location, matched:data.total_matched, expanded:data.radius_expanded, time:new Date().toLocaleTimeString(), status:'pending', acceptedBy:null });
+    renderHistory();
+    loadStats();
+
+    const smsBtn = document.getElementById('smsAllBtn');
+    smsBtn.style.display = data.total_matched > 0 ? '' : 'none';
+
+    if (!data.total_matched) {
+      Swal.fire({ icon:'warning', title:'No Donors Found', text:'No compatible donors found even at 5 km.', confirmButtonColor:'#C8102E' });
+    } else {
+      Swal.fire({ icon:'success', title:`${data.total_matched} Donor(s) Found`,
+        html:`Compatible donors within <b>${data.search_radius_km} km</b>.${data.radius_expanded?'<br><i>Radius expanded to 5 km.</i>':''}`,
+        timer:3500, timerProgressBar:true, showConfirmButton:false });
+    }
+  } catch(e) { errAlert(e.message); }
+  finally { setBtn(btn, false, '<i class="bi bi-search-heart"></i> Search Matching Donors'); }
+}
+
+/* ══════════════════════════════════════════════════════════
+   SMS — SINGLE DONOR
+══════════════════════════════════════════════════════════ */
+async function sendSmsTo(donorId, btn) {
+  if (!lastRequestResult) return;
+  const hospId = authUser?.hospital_id || authUser?.id;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin" style="border-top-color:#fff"></span>';
+  try {
+    const res = await fetch(API + '/api/send-sms', {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer '+authToken },
+      body: JSON.stringify({ donor_id: donorId, hospital_id: parseInt(hospId), blood_group: document.getElementById('rBlood').value })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail);
+    btn.innerHTML = '<i class="bi bi-check-lg"></i> Sent';
+    btn.style.background = 'var(--green)';
+    Swal.fire({ toast:true, position:'top-end', icon:'success',
+      title:`SMS sent to ${data.donor_name}`, text:`Status: ${data.sms_status}`,
+      timer:3000, showConfirmButton:false });
+  } catch(e) {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="bi bi-chat-dots-fill"></i> SMS';
+    errAlert(e.message);
+  }
+}
+
+/* ══════════════════════════════════════════════════════════
+   SMS — ALL MATCHED DONORS
+══════════════════════════════════════════════════════════ */
+async function sendSmsAll() {
+  if (!lastRequestResult || !authToken) return;
+  const { payload } = lastRequestResult;
+  const hospId = authUser?.hospital_id || authUser?.id;
+  const cnt = Math.min(lastRequestResult.total_matched, 10);
+
+  const conf = await Swal.fire({
+    icon:'question', title:'Send SMS to All Donors?',
+    html:`This will send an SMS appeal to <b>up to ${cnt}</b> matched donor(s). Continue?`,
+    showCancelButton:true, confirmButtonColor:'#C8102E', confirmButtonText:'Yes, send SMS'
+  });
+  if (!conf.isConfirmed) return;
+
+  const btn = document.getElementById('smsAllBtn');
+  setBtn(btn, true, 'Sending…');
+  try {
+    const res = await fetch(API + '/api/send-sms-all', {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer '+authToken },
+      body: JSON.stringify({ hospital_id: parseInt(hospId), blood_group: payload.blood_group,
+        latitude: payload.latitude, longitude: payload.longitude, target_location: payload.target_location })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail);
+    Swal.fire({ icon:'success', title:`SMS Sent to ${data.sms_sent} Donor(s)`,
+      html: data.results.map(r => `<div style="font-size:.85rem"><b>${esc(r.donor)}</b> — ${r.status}</div>`).join(''),
+      confirmButtonColor:'#C8102E' });
+  } catch(e) { errAlert(e.message); }
+  finally { setBtn(btn, false, '<i class="bi bi-chat-dots-fill"></i> SMS All'); }
+}
+
+/* ══════════════════════════════════════════════════════════
+   RENDER DONOR RESULTS TABLE
+══════════════════════════════════════════════════════════ */
+function renderDonorResults(data) {
+  const wrap    = document.getElementById('donorResultsWrap');
+  const summary = document.getElementById('matchSummary');
+  const donors  = data.matched_donors || [];
+  summary.style.display = 'inline';
+  summary.textContent   = `${data.total_matched} match(es) · ${data.search_radius_km} km`;
+
+  if (!donors.length) {
+    wrap.innerHTML = '<div class="empty"><i class="bi bi-person-x"></i><p>No compatible donors found in search radius</p></div>';
+    return;
+  }
+
+  const isHosp = authRole === 'hospital';
+  const rows = donors.map(d => `
+    <tr>
+      <td style="white-space:nowrap">
+        <span class="donor-avatar">${esc(d.full_name[0])}</span>
+        <span style="font-weight:600">${esc(d.full_name)}</span>
+      </td>
+      <td><span class="blood-pill">${esc(d.blood_group)}</span></td>
+      <td style="font-size:.82rem">${esc(d.location || d.address?.split(',')[0] || '—')}</td>
+      <td>${d.distance_km!=null ? `<span class="dist-badge"><i class="bi bi-signpost"></i>${d.distance_km} km</span>` : '<span style="color:var(--ink-4);font-size:.78rem">N/A</span>'}</td>
+      <td>
+        <div class="d-flex gap-1 flex-wrap">
+          <a class="action-call" href="tel:${esc(d.phone_number)}"><i class="bi bi-telephone-fill"></i>${esc(d.phone_number)}</a>
+          ${isHosp ? `<button class="btn-blue" id="sms-${d.id}" onclick="sendSmsTo(${d.id},this)" style="font-size:.72rem;padding:3px 8px"><i class="bi bi-chat-dots-fill"></i> SMS</button>` : ''}
+        </div>
+      </td>
+    </tr>`).join('');
+
+  wrap.innerHTML = `
+    <div class="result-bar">
+      <span class="count">${data.total_matched} compatible donor(s) found</span>
+      <span class="radius-tag ${data.radius_expanded?'expanded':'normal'}">
+        <i class="bi bi-${data.radius_expanded?'arrows-angle-expand':'check-circle'}"></i>
+        ${data.radius_expanded ? '5 km (expanded)' : '2 km radius'}
+      </span>
+    </div>
+    <div class="table-responsive">
+      <table class="donors-tbl">
+        <thead><tr><th>Donor</th><th>Blood</th><th>Location</th><th>Distance</th><th>Contact${isHosp?' / SMS':''}</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+    ${data.total_matched > donors.length ? `<div style="padding:.6rem 1rem;font-size:.75rem;color:var(--ink-3);border-top:1px solid var(--red-border)">Showing top ${donors.length} of ${data.total_matched}</div>` : ''}`;
+}
+
+function renderHistory() {
+  const wrap = document.getElementById('historyWrap');
+  if (!reqHistory.length) { wrap.innerHTML = '<div class="empty"><i class="bi bi-journal-x"></i><p>No requests yet</p></div>'; return; }
+  wrap.innerHTML = `<div class="table-responsive"><table class="hist-tbl">
+    <thead><tr><th>ID</th><th>Group</th><th>Location</th><th>Matched</th><th>Status</th><th>Time</th></tr></thead>
+    <tbody>${reqHistory.map(r=>`
+      <tr>
+        <td style="font-size:.75rem;color:var(--ink-3)">#${r.id}</td>
+        <td><span class="blood-pill">${esc(r.blood)}</span></td>
+        <td style="font-size:.8rem">${esc(r.location)}</td>
+        <td style="font-weight:600;color:${r.matched>0?'var(--green)':'var(--red)'}">${r.matched}</td>
+        <td style="font-size:.78rem;font-weight:600;color:${r.status==='fulfilled'?'var(--green)':'var(--amber)'}">${r.status==='fulfilled'?`<i class="bi bi-check-circle-fill"></i> Fulfilled${r.acceptedBy?' by '+esc(r.acceptedBy):''}`:'<i class="bi bi-hourglass-split"></i> Pending'}</td>
+        <td style="font-size:.74rem;color:var(--ink-3)">${r.time}</td>
+      </tr>`).join('')}
+    </tbody></table></div>`;
+}
+
+/* ══════════════════════════════════════════════════════════
+   MAP
+══════════════════════════════════════════════════════════ */
+const BLOOD_COLORS = {
+  'A+':'#C8102E','A-':'#E84855','B+':'#0077B6','B-':'#00B4D8',
+  'AB+':'#6A0572','AB-':'#9D4EDD','O+':'#2D6A4F','O-':'#40916C'
+};
+
+async function initMap() {
+  if (mapInstance) { refreshMap(); return; }
+  mapInstance = L.map('donorMap').setView([17.385, 78.487], 10);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution:'© OpenStreetMap contributors', maxZoom:18
+  }).addTo(mapInstance);
+  await refreshMap();
+}
+
+async function refreshMap() {
+  if (!mapInstance) return;
+  mapMarkers.forEach(m => mapInstance.removeLayer(m));
+  mapMarkers = [];
+  try {
+    const res  = await fetch(API + '/api/donors');
+    const data = await res.json();
+    const donors = data.donors || [];
+    let hasCoord = false;
+    donors.forEach(d => {
+      if (!d.latitude || !d.longitude) return;
+      hasCoord = true;
+      const color  = BLOOD_COLORS[d.blood_group] || '#C8102E';
+      const icon   = L.divIcon({
+        html:`<div style="width:32px;height:32px;border-radius:50%;background:${color};color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.3)">${d.blood_group}</div>`,
+        iconSize:[32,32], className:''
+      });
+      const m = L.marker([d.latitude, d.longitude], { icon })
+        .addTo(mapInstance)
+        .bindPopup(`<b>${d.full_name}</b><br><span style="color:${color};font-weight:700">${d.blood_group}</span><br>${d.location||''}<br><a href="tel:${d.phone_number}">${d.phone_number}</a>`);
+      mapMarkers.push(m);
+    });
+    if (hasCoord && mapMarkers.length) {
+      const group = L.featureGroup(mapMarkers);
+      mapInstance.fitBounds(group.getBounds().pad(.2));
+    }
+    renderMapList(donors);
+  } catch(e) { console.warn('Map refresh failed', e); }
+}
+
+function renderMapList(donors) {
+  const el = document.getElementById('mapDonorList');
+  if (!donors.length) { el.innerHTML = '<div class="empty"><i class="bi bi-people"></i><p>No donors yet</p></div>'; return; }
+  el.innerHTML = `<div style="max-height:320px;overflow-y:auto">${donors.map(d => `
+    <div style="display:flex;align-items:center;gap:10px;padding:.65rem 1rem;border-bottom:1px solid var(--red-border);cursor:pointer" onclick="flyToPin(${d.latitude||0},${d.longitude||0})">
+      <span class="donor-avatar" style="background:${BLOOD_COLORS[d.blood_group]||'var(--red)'};">${d.full_name[0]}</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:600;font-size:.85rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(d.full_name)}</div>
+        <div style="font-size:.75rem;color:var(--ink-3)">${esc(d.location||'')}</div>
+      </div>
+      <span class="blood-pill">${esc(d.blood_group)}</span>
+    </div>`).join('')}</div>`;
+}
+
+function flyToPin(lat, lon) {
+  if (!mapInstance || !lat || !lon) return;
+  mapInstance.flyTo([lat, lon], 14, { animate:true, duration:.8 });
+}
+
+/* ══════════════════════════════════════════════════════════
+   GEOLOCATION
+══════════════════════════════════════════════════════════ */
+const locCfg = {
+  r:  { dot:'rLocDot',  txt:'rLocTxt',  latId:'rLat', lonId:'rLon' },
+  m:  { dot:'mLocDot',  txt:'mLocTxt',  latId:null,   lonId:null   },
+  mh: { dot:'mhLocDot', txt:'mhLocTxt', latId:null,   lonId:null   },
+};
+
+function captureLocation(ctx) {
+  const cfg = locCfg[ctx];
+  if (!navigator.geolocation) { setLocUI(cfg,'err','Geolocation not supported'); return; }
+  setLocUI(cfg,'loading','Fetching GPS…');
+  navigator.geolocation.getCurrentPosition(
+    async pos => {
+      const lat = +pos.coords.latitude.toFixed(6);
+      const lon = +pos.coords.longitude.toFixed(6);
+      gps[ctx] = { lat, lon };
+      if (cfg.latId) document.getElementById(cfg.latId).value = lat;
+      if (cfg.lonId) document.getElementById(cfg.lonId).value = lon;
+      setLocUI(cfg,'loading',`${lat}, ${lon} — geocoding…`);
+      try {
+        const r  = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`, { headers:{'Accept-Language':'en'} });
+        const j  = await r.json();
+        const area = j.address?.suburb || j.address?.city || 'Location found';
+        setLocUI(cfg,'ok',`${area} captured`);
+      } catch { setLocUI(cfg,'ok','Coordinates captured'); }
+    },
+    err => setLocUI(cfg,'err', err.code===1?'Permission denied':'Could not get location'),
+    { enableHighAccuracy:true, timeout:12000 }
+  );
+}
+
+function setLocUI(cfg, state, text) {
+  const dot = document.getElementById(cfg.dot);
+  const txt = document.getElementById(cfg.txt);
+  if (dot) dot.className = 'loc-dot ' + (state==='loading'?'loading':state==='ok'?'ok':state==='err'?'err':'');
+  if (txt) txt.textContent = text;
+}
+
+/* ══════════════════════════════════════════════════════════
+   WEBSOCKET
+══════════════════════════════════════════════════════════ */
+function initWS() {
+  try {
+    ws = new WebSocket(WS);
+    ws.onopen = () => {
+      setWsUI(true);
+      setInterval(() => { if (ws?.readyState===1) ws.send(JSON.stringify({type:'PING'})); }, 25000);
+    };
+    ws.onclose = () => { setWsUI(false); setTimeout(initWS, 4000); };
+    ws.onerror = () => setWsUI(false);
+    ws.onmessage = e => { try { handleWS(JSON.parse(e.data)); } catch{} };
+  } catch { setWsUI(false); setTimeout(initWS, 4000); }
+}
+function setWsUI(on) {
+  document.getElementById('wsDot').className = 'ws-dot ' + (on?'live':'dead');
+  document.getElementById('wsLabel').textContent = on ? 'Live' : 'Offline';
+  if (on) loadStats();
+}
+function handleWS(msg) {
+  if (msg.type==='PONG'||msg.type==='CONNECTED') return;
+
+  if (msg.type==='BLOOD_REQUEST') {
+    // Only donors need to see/accept incoming requests — previously this
+    // fired for every connected client, including the hospital that just
+    // submitted the request itself.
+    if (authRole === 'donor') {
+      pushNotif(msg);
+      Swal.fire({ toast:true, position:'bottom-end', icon:'warning', title:'🩸 Blood Request',
+        text:`${msg.hospital_name} needs ${msg.blood_group}`, timer:5500, timerProgressBar:true,
+        showConfirmButton:false, background:'#FFF2F4', color:'#5C0312', iconColor:'#C8102E' });
+    }
+  }
+
+  if (msg.type==='REQUEST_ACCEPTED') {
+    // Fired only after a donor explicitly hits Accept (see respondNotif).
+    // This is the actual "donor -> hospital" notification.
+    const myHospId = authUser?.hospital_id || authUser?.id;
+    if (authRole === 'hospital' && String(msg.hospital_id) === String(myHospId)) {
+      Swal.fire({ icon:'success', title:'🎉 Donor Accepted!',
+        html:`<b>${esc(msg.donor_name)}</b> (${esc(msg.donor_phone)}) accepted your request for <b>${esc(msg.blood_group)}</b>.`,
+        confirmButtonColor:'#C8102E' });
+      // Mark seen immediately so the offline-catchup toast in
+      // loadHospitalHistory() doesn't show it again as "missed".
+      const seenKey = 'ls_seen_fulfilled_' + myHospId;
+      const seen = JSON.parse(localStorage.getItem(seenKey) || '[]');
+      if (!seen.includes(msg.request_id)) localStorage.setItem(seenKey, JSON.stringify([...seen, msg.request_id]));
+      loadHospitalHistory();
+    }
+    loadStats();
+  }
+
+  if (msg.type==='DONOR_REGISTERED'||msg.type==='HOSPITAL_REGISTERED') loadStats();
+}
+
+/* ══════════════════════════════════════════════════════════
+   NOTIFICATIONS
+══════════════════════════════════════════════════════════ */
+function pushNotif(msg) {
+  notifs.unshift(msg); unread++;
+  const b = document.getElementById('bellBadge');
+  b.textContent = unread > 9 ? '9+' : unread;
+  b.style.display = 'flex';
+  renderNotifs();
+}
+async function loadHospitalHistory() {
+  if (authRole !== 'hospital' || !authUser) return;
+  const hospId = authUser.hospital_id || authUser.id;
+  if (!hospId) return;
+  try {
+    const res  = await fetch(API + '/api/requests?hospital_id=' + parseInt(hospId));
+    const data = await res.json();
+    if (!res.ok) return;
+
+    reqHistory.length = 0;
+    (data.requests || []).forEach(r => {
+      reqHistory.push({
+        id: r.id, blood: r.blood_group, location: r.target_location,
+        matched: r.matched_count, time: new Date(r.created_at).toLocaleTimeString(),
+        status: r.status, acceptedBy: r.accepted_donor_name,
+      });
+    });
+    renderHistory();
+
+    // Catch up on any accept notifications missed while offline (mirrors
+    // the same live-push gap donors had — WS only reaches a connected tab).
+    const seenKey = 'ls_seen_fulfilled_' + hospId;
+    const seen = JSON.parse(localStorage.getItem(seenKey) || '[]');
+    const newlyFulfilled = (data.requests || []).filter(r => r.status === 'fulfilled' && !seen.includes(r.id));
+    if (newlyFulfilled.length) {
+      const lines = newlyFulfilled.map(r => `<b>${esc(r.accepted_donor_name)}</b> accepted your <b>${esc(r.blood_group)}</b> request`).join('<br>');
+      Swal.fire({ icon:'success', title: newlyFulfilled.length>1 ? 'Donors Accepted!' : 'Donor Accepted!', html: lines, confirmButtonColor:'#C8102E' });
+      localStorage.setItem(seenKey, JSON.stringify([...seen, ...newlyFulfilled.map(r=>r.id)]));
+    }
+  } catch {}
+}
+
+async function loadDonorRequests() {
+  // Live WS pushes only reach a donor who is connected at the exact moment
+  // a hospital sends a request. This backfills anything sent while the
+  // donor's tab was closed/offline, so requests don't just vanish.
+  if (authRole !== 'donor' || !authUser) return;
+  const donorId = authUser.donor_id || authUser.id;
+  if (!donorId) return;
+  try {
+    const res  = await fetch(API + '/api/donor-requests/' + parseInt(donorId));
+    const data = await res.json();
+    if (!res.ok) return;
+    let added = 0;
+    (data.requests || []).forEach(r => {
+      if (!notifs.some(n => n.request_id === r.request_id)) { notifs.push(r); added++; }
+    });
+    if (added) {
+      notifs.sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
+      unread += added;
+      const b = document.getElementById('bellBadge');
+      b.textContent = unread > 9 ? '9+' : unread;
+      b.style.display = 'flex';
+    }
+    renderNotifs();
+  } catch {}
+}
+function renderNotifs() {
+  const list = document.getElementById('notifList');
+  if (!notifs.length) {
+    list.innerHTML = '<div class="notif-card" style="border-left-color:var(--red-mist);text-align:center;color:var(--ink-3);font-size:.82rem;padding:1.5rem"><i class="bi bi-bell-slash" style="font-size:1.4rem;display:block;margin-bottom:.5rem;color:var(--red-mist)"></i>No alerts yet</div>';
+    return;
+  }
+  list.innerHTML = notifs.map((n,i) => `
+    <div class="notif-card" id="nc-${i}">
+      <div class="notif-hosp"><i class="bi bi-hospital-fill me-1" style="color:var(--red)"></i>${esc(n.hospital_name)}</div>
+      <div class="notif-meta"><i class="bi bi-geo-alt me-1"></i>${esc(n.location||'')} &nbsp;·&nbsp; <i class="bi bi-telephone me-1"></i>${esc(n.contact_number||'N/A')}<br><i class="bi bi-pin-map me-1"></i>${esc(n.target_location||'')}</div>
+      <div class="notif-blood"><i class="bi bi-droplet-fill"></i>${esc(n.blood_group)} Required</div>
+      <div class="notif-btns">
+        <button class="n-accept" onclick="respondNotif(${i},'accept')"><i class="bi bi-check-lg"></i> Accept</button>
+        <button class="n-reject" onclick="respondNotif(${i},'reject')"><i class="bi bi-x-lg"></i> Reject</button>
+      </div>
+    </div>`).join('');
+}
+async function respondNotif(i, action) {
+  const n  = notifs[i];
+  const el = document.getElementById('nc-'+i);
+
+  if (action !== 'accept') {
+    if (el) { el.style.opacity='.5'; el.querySelector('.notif-btns').innerHTML='<span style="font-size:.78rem;color:var(--ink-3)">Declined</span>'; }
+    return;
+  }
+
+  if (authRole !== 'donor' || !authUser) {
+    errAlert('Please log in as a donor to accept a request.');
+    return;
+  }
+  const donorId = authUser.donor_id || authUser.id;
+  const btns = el ? el.querySelector('.notif-btns') : null;
+  if (btns) btns.innerHTML = '<span class="spin"></span>';
+
+  try {
+    const res = await fetch(API + '/api/respond-request', jsonPost({
+      request_id: n.request_id, donor_id: parseInt(donorId), action: 'accept'
+    }));
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Could not record your response');
+
+    if (el) { el.style.borderLeftColor = '#22C55E'; if (btns) btns.innerHTML = '<span style="font-size:.78rem;color:var(--green)"><i class="bi bi-check-circle-fill"></i> Accepted — hospital notified</span>'; }
+    Swal.fire({ icon:'success', title:'Accepted!',
+      html:`The hospital has been notified. Please contact <b>${esc(data.hospital_name||n.hospital_name)}</b> at:<br><b>${esc(data.hospital_contact||n.contact_number||'N/A')}</b>`,
+      confirmButtonColor:'#C8102E' });
+  } catch (e) {
+    if (btns) btns.innerHTML = '<span style="font-size:.78rem;color:var(--red)">Already taken</span>';
+    Swal.fire({ icon:'info', title:'Too late', text:e.message, confirmButtonColor:'#C8102E' });
+  }
+}
+function toggleDrawer() {
+  const d = document.getElementById('notifDrawer');
+  d.classList.toggle('open');
+  if (d.classList.contains('open')) {
+    unread=0; document.getElementById('bellBadge').style.display='none';
+    if (authRole === 'donor') loadDonorRequests(); else if(!notifs.length) renderNotifs();
+  }
+}
+function clearNotifs() { notifs.length=0; unread=0; document.getElementById('bellBadge').style.display='none'; renderNotifs(); }
+document.addEventListener('click', e => {
+  const d = document.getElementById('notifDrawer');
+  if (d.classList.contains('open') && !d.contains(e.target) && !e.target.closest('.bell-btn')) d.classList.remove('open');
+});
+
+/* ══════════════════════════════════════════════════════════
+   STATS
+══════════════════════════════════════════════════════════ */
+async function loadStats() {
+  try {
+    const res  = await fetch(API + '/api/stats');
+    const data = await res.json();
+    tickNum('statDonors',    data.donors||0);
+    tickNum('statHospitals', data.hospitals||0);
+    tickNum('statRequests',  data.fulfilled||0);
+    tickNum('statLive',      data.live_connections||0);
+  } catch {}
+}
+function tickNum(id, target) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const start = parseInt(el.textContent)||0;
+  if (start===target) return;
+  let i=0; const steps=20; const delta=target-start;
+  const t = setInterval(()=>{ i++; el.textContent=Math.round(start+delta*(i/steps)); if(i>=steps){el.textContent=target;clearInterval(t);} },20);
+}
+
+/* ══════════════════════════════════════════════════════════
+   HELPERS
+══════════════════════════════════════════════════════════ */
+function jsonPost(body) { return { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) }; }
+function setBtn(btn, disabled, html) { btn.disabled=disabled; btn.innerHTML=disabled?`<span class="spin"></span> ${html}`:html; }
+function errAlert(msg) { Swal.fire({ icon:'error', title:'Something went wrong', text:msg||'Server error', confirmButtonColor:'#C8102E' }); }
+function esc(s) { return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+/* ══════════════════════════════════════════════════════════
+   INIT — single clean entry point, no duplicate calls
+══════════════════════════════════════════════════════════ */
+// Run immediately (synchronously) so navbar state is correct before first paint
+updateNavAuth();
+
+// Pre-fill hospital ID if already logged in
+if (authRole === 'hospital' && authUser) {
+  document.getElementById('rHospId').value = authUser.hospital_id || authUser.id || '';
+}
+// If a donor is already logged in from a previous session, catch them up
+// on any requests that came in while they were offline.
+if (authRole === 'donor' && authUser) {
+  loadDonorRequests();
+}
+// Same idea for a hospital: pull their real request history/status from
+// the server instead of relying on the empty frontend-only array.
+if (authRole === 'hospital' && authUser) {
+  loadHospitalHistory();
+}
+
+// Start background services
+initWS();
+loadStats();
+setInterval(loadStats, 30000);
+</script>
+</body>
+</html>

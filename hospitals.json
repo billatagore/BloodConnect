@@ -1,0 +1,35 @@
+[
+  {
+    "id": 1,
+    "name": "Apollo",
+    "location": "Hyderabad",
+    "contact_number": "940165348",
+    "address": "Secunderabad",
+    "latitude": 17.237341,
+    "longitude": 78.565347,
+    "password": "123456",
+    "registered_at": "2026-08-08T18:52:16.915796"
+  },
+  {
+    "id": 2,
+    "name": "Kamineni",
+    "location": "Hyderabad",
+    "contact_number": "9347191161",
+    "address": "Secunderabad",
+    "latitude": 17.237376,
+    "longitude": 78.56495,
+    "password": "123456",
+    "registered_at": "2026-08-08T23:00:07.000041"
+  },
+  {
+    "id": 3,
+    "name": "apollo1",
+    "location": "khammam",
+    "contact_number": "9440401124",
+    "address": "khammam",
+    "latitude": 17.237287,
+    "longitude": 78.564979,
+    "password": "123456",
+    "registered_at": "2026-08-08T23:13:34.834779"
+  }
+]
